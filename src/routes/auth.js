@@ -9,4 +9,6 @@ app.post("/register", [
     body("password").escape().isLength({min: 7}).withMessage("password anda terlalu lemah")
 ], userController.userRegister);
 
+app.post("/login", userController.userLogin);
+
 module.exports = app;

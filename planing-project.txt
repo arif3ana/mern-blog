@@ -61,7 +61,6 @@ res: {
 } 
 
 error.response:
-400 - input yang anda masukan salah
 401 - anda belum login
 
 

@@ -1,10 +1,11 @@
 const {validationResult} = require("express-validator");
 const User = require("../model/db");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const saltRound = 10;
 
- const userRegister = async (req, res) => {
+const userRegister = async (req, res, next) => {
 
     const salt = await bcrypt.genSalt(saltRound);
     
@@ -16,9 +17,9 @@ const saltRound = 10;
 
     if(!errors.isEmpty()) {
         const err = new Error("Input tidak valid");
-        err.errorStatus = 400;
+        err.status = 400;
         err.data = errors.array();
-        throw err;
+        return next(err)
     }
 
     const result = {
@@ -30,11 +31,39 @@ const saltRound = 10;
         }
     }
 
-    res.status(201).json(result);
+    await res.status(201).json(result);
 
-    // const user = new User(result.data);
-    // user.save().then(() => console.log("register success!!"));
+    const user = new User(result.data);
+    user.save().then(() => console.log("register success!!"));
     
 }
 
-module.exports = {userRegister}
+const userLogin = async (req, res, next) => {
+    const user = await User.findOne({email: req.body.email});
+    if (!user) {
+        const err = new Error("Email atau Password salah!!");
+        err.status = 401;
+        return next(err);
+    }
+
+    const validPassword = await bcrypt.compare(req.body.password, user.password);
+    
+    if (!validPassword) {
+        const err = new Error("Password anda tidak valid");
+        err.status = 401;
+        return next(err);
+    }
+
+    const token = jwt.sign({userId: user._id, username: user.username, email: user.email}, "user-secret-key");
+
+    res.status(200).json({
+        message: "login Success!!",
+        data: {
+            userId: user._id,
+            email: user.email,
+            token
+        }
+    })
+}
+
+module.exports = {userRegister, userLogin}
