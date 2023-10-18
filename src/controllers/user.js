@@ -1,9 +1,16 @@
 const {validationResult} = require("express-validator");
 const User = require("../model/db");
-function userRegister(req, res) {
+const bcrypt = require("bcrypt");
+
+const saltRound = 10;
+
+ const userRegister = async (req, res) => {
+
+    const salt = await bcrypt.genSalt(saltRound);
+    
     const username = req.body.username;
     const email = req.body.email;
-    const password = req.body.password;
+    const password = await bcrypt.hash(req.body.password, salt);
 
     const errors = validationResult(req);
 
@@ -22,11 +29,11 @@ function userRegister(req, res) {
             password
         }
     }
-    
+
     res.status(201).json(result);
 
-    const user = new User(result.data);
-    user.save().then(() => console.log("register success!!"));
+    // const user = new User(result.data);
+    // user.save().then(() => console.log("register success!!"));
     
 }
 
