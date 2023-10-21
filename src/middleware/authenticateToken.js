@@ -7,16 +7,17 @@ function handleError(msg, status, next) {
 }
 
 function AuthenticateToken(req, res, next) {
-    const token = req.header("Authorization");
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1];
     if (!token) {
         handleError("Maaf anda belum login", 401, next);
     }
-    jwt.verify(token, "user-secret-key", (e, user, next) => {
-        if (e) {
-            handleError("Invalid token", 403, next);
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET_KEY, (er, user) => {
+        if (er) {
+            handleError("Token tidak valid", 403, next);
         }
         req.user = user;
-        next();
+        next()
     })   
 }
 

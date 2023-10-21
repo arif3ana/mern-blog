@@ -11,4 +11,6 @@ app.post("/register", [
 
 app.post("/login", userController.userLogin);
 
+// Route Logout
+
 module.exports = app;
