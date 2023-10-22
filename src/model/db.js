@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-mongoose.connect("mongodb://127.0.0.1:27017/foods", {autoIndex: true})
+mongoose.connect(process.env.DB_URI, {autoIndex: true})
 .then(() => console.log("Conected success!!"));
 
 const User = mongoose.model("User", {
@@ -10,7 +10,8 @@ const User = mongoose.model("User", {
     },
     email: {
         type: String,
-        required: true
+        required: true,
+        unique: 1
     },
     password: {
         type: String,

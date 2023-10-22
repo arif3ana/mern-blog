@@ -1,5 +1,5 @@
 const express = require("express");
-const foodController = require('../controllers/foods');
+const foodController = require('../controllers/foodsController');
 const { body } = require("express-validator");
 const app = express();
 const upload = require("../middleware/imageHandler");

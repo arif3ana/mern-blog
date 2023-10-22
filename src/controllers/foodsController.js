@@ -3,7 +3,7 @@ const fs = require('fs');
 const Path = require("path");
 const { validationResult } = require("express-validator");
 
-// Read - Get
+// GET - Read
 const getFood = async (req, res) => {
     const data = await Food.find();
     if (!data) {
@@ -18,10 +18,10 @@ const getFood = async (req, res) => {
     })
 }
 
+// GET - Read by id
 const detailFood = async (req, res, next) => {
     const foodId = req.params.id
     const detailData = await Food.findById(foodId);
-    console.log(detailData);
     if (!detailData) {
         const err = new Error("Resep Makanan Tidak Di temukan");
         err.status = 404;
