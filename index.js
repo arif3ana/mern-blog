@@ -5,23 +5,23 @@ const port = 3000;
 
 const routesApp = require("./src/routes/route");
 const authApp = require("./src/routes/auth");
-const upload = require("./src/middleware/imageHandler");
+// const upload = require("./src/middleware/imageHandler");
 const AuthenticateToken = require("./src/middleware/authenticateToken");
 
 //Middleware
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
-app.use(upload.fields([
-    {name: "image", maxCount: 1}, 
-    {name: "img", maxCount: 10}
-  ]));
+// app.use(upload.fields([
+//     {name: "image", maxCount: 1}, 
+//     {name: "img", maxCount: 10}
+//   ]));
 
 
 // jangan lupa mengatasi error CORS 
 
 // Routes auth
 app.use("/v1/auth/", authApp);
-app.use("/v1/admin/",AuthenticateToken, routesApp);
+app.use("/v1/admin/", AuthenticateToken, routesApp);
 
 app.use((err, req, res, next) => {
     if (err) {

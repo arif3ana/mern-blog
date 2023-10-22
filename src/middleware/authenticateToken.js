@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 
+// jadikan fungsi handleError menjadi middleware untuk menghandle error message
 function handleError(msg, status, next) {
     const err = new Error(msg);
     err.status = status;
