@@ -36,34 +36,8 @@ const userRegister = async (req, res, next) => {
     }))
     .catch((error) => res.status(400).json({
         message: "Input tidak valid",
-        error
+        error: error.keyPattern.email ? "Email sudah digunakan" : error
     }));  
-}
-
-// POST - refresh token jwt
-const refreshToken = (req, res, next) => {
-    const tokenRefresh = req.cookies['refreshToken'];
-    if (!refreshToken) {
-        const err = new Error("Silahkan Login kembali");
-        err.status = 401;
-        return next(err)
-    }
-
-    try {
-        const decoded = jwt.verify(tokenRefresh, process.env.REFRESH_TOKEN_SECRET_KEY);
-        const accessToken = jwt.sign({user: decoded.user}, process.env.ACCESS_TOKEN_SECRET_KEY, { expiresIn: 3600 });
-    
-        res.header("Authorization", "Bearer " + accessToken).status(200)
-        .json({
-            user: decoded.user
-        });
-    } catch (error) {
-        const err = new Error("Unauthorized");
-        err.status = 401;
-        err.data = error;
-        return next(err)
-    }
-
 }
 
 // POST - Login authentication
@@ -101,6 +75,33 @@ const userLogin = async (req, res, next) => {
         email: user.email,
     }})
 }
+
+// POST - refresh token jwt
+const refreshToken = (req, res, next) => {
+    const tokenRefresh = req.cookies['refreshToken'];
+    if (!refreshToken) {
+        const err = new Error("Silahkan Login kembali");
+        err.status = 401;
+        return next(err)
+    }
+    
+    try {
+        const decoded = jwt.verify(tokenRefresh, process.env.REFRESH_TOKEN_SECRET_KEY);
+        const accessToken = jwt.sign({user: decoded.user}, process.env.ACCESS_TOKEN_SECRET_KEY, { expiresIn: 3600 });
+    
+        res.header("Authorization", "Bearer " + accessToken).status(200)
+        .json({
+            user: decoded.user
+        });
+    } catch (error) {
+        const err = new Error("Unauthorized");
+        err.status = 401;
+        err.data = error;
+        return next(err)
+    }
+
+}
+
 // DELETE - Logout
 const userLogout = (req, res) => {
     // Menghapus cookie refreshToken

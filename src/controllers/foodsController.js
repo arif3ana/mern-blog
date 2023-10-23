@@ -4,32 +4,43 @@ const Path = require("path");
 const { validationResult } = require("express-validator");
 
 // GET - Read
-const getFood = async (req, res) => {
-    const data = await Food.find();
-    if (!data) {
+const getFood = (req, res, next) => {
+    Food.find()
+    .then((result) => {
+        if (result.length === 0) {
+            const err = new Error("Data Makanan Belum ada");
+            err.status = 404;
+            err.data = result;
+            return next(err)
+        }
+        res.status(200).json({
+            message: "Data Makanan berhasil di tampilkan",
+            data: result
+        })
+    })
+    .catch((error) => {
         const err = new Error("Data Makanan Belum ada");
         err.status = 404;
+        err.data = error;
         return next(err)
-    }
-
-    res.status(200).json({
-        message: "Data Makanan berhasil di tampilkan",
-        data: data
     })
 }
 
 // GET - Read by id
-const detailFood = async (req, res, next) => {
+const detailFood = (req, res, next) => {
     const foodId = req.params.id
-    const detailData = await Food.findById(foodId);
-    if (!detailData) {
+    Food.findById(foodId)
+    .then((result) => {
+        res.status(200).json({
+            message: "Resep Makanan berhasil di temukan",
+            data: result
+        })
+    })
+    .catch((error) => {
         const err = new Error("Resep Makanan Tidak Di temukan");
         err.status = 404;
+        err.data = error;
         return next(err)
-    }
-    res.status(200).json({
-        message: "Resep Makanan berhasil di temukan",
-        data: detailData
     })
 }
 
@@ -91,8 +102,16 @@ const updateFood = async (req, res, next) => {
     }
 
     //mengambil data yang akan di update
-    const idParams = req.params.id;
-    const dataUpdate = await Food.findById(idParams);
+    let dataUpdate;
+    try {
+        const idParams = req.params.id;
+        dataUpdate = await Food.findById(idParams);
+    } catch (error) {
+        const err = new Error("Data tidak di temukan");
+        err.status = 404;
+        err.data = error
+        return next(err)
+    }
 
     // menghandle request image jika ada maupun tidak ada request image
     let {image, img} = req.files;
@@ -165,9 +184,17 @@ const updateFood = async (req, res, next) => {
 }
 
 const deleteFood = async (req, res, next) => {
-    const dataId = req.params.id;
-    const dataDeleted = await Food.findOneAndDelete(dataId);
-
+    let dataDeleted ;
+    try {
+        const dataId = req.params.id;
+        dataDeleted = await Food.findById(dataId);
+    } catch (error) {
+        const err = new Error("Data tidak di temukan");
+        err.status = 404;
+        err.data = error
+        return next(err)
+    }
+        
     //hapus image dan img
     const imageFullPath = Path.join(__dirname, '../../' + dataDeleted.image);
     fs.unlink(imageFullPath, (err) => {
@@ -195,10 +222,21 @@ const deleteFood = async (req, res, next) => {
         }
     })
 
-    res.status(200).json({
-        message: "Data berhasil di hapus!!",
-        data: dataDeleted
+    // deleted data 
+    Food.deleteOne({_id: dataDeleted._id})
+    .then((result) => {
+        res.status(200).json({
+            message: "Data Berhasil dihapus!!",
+            data: result
+        })
     })
+    .catch((error) => {
+        const err = new Error("Data Gagal dihapus");
+        err.status = 404;
+        err.data = error
+        return next(err)
+    })
+
 }
 
 // __dirname: /home/al-arif/Proyek/mern-blog/src/controllers

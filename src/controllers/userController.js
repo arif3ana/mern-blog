@@ -1,16 +1,25 @@
 const { Food } = require("../model/db")
 
-const getRecipe = async (req, res) => {
-    const data = await Food.find();
-    if (!data) {
+const getRecipe = (req, res, next) => {
+    Food.find()
+    .then((result) => {
+        if (result.length === 0) {
+            const err = new Error("Data Makanan Belum ada");
+            err.status = 404;
+            err.data = result;
+            return next(err)
+        } 
+
+        res.status(200).json({
+            message: "Data Makanan berhasil di tampilkan",
+            data: result
+        })
+    })
+    .catch((error) => {
         const err = new Error("Data Makanan Belum ada");
         err.status = 404;
+        err.data = error;
         return next(err)
-    }
-
-    res.status(200).json({
-        message: "Data Makanan berhasil di tampilkan",
-        data: data
     })
 }
 

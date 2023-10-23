@@ -33,10 +33,8 @@ function AuthenticateToken(req, res, next) {
     try {
         const decodedRefreshToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET_KEY);
         const newAccessToken = jwt.sign({user: decodedRefreshToken.user}, process.env.ACCESS_TOKEN_SECRET_KEY, {expiresIn: 1800});
-
-        res
-        .cookie('refreshToken', refreshToken, { httpOnly: true })
-        .header("Authorization", "Bearer " + newAccessToken);
+        
+        res.header("Authorization", "Bearer " + newAccessToken);
         next()
     } catch (error) {
         handleError("Invalid Token", 400, error, next);

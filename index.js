@@ -27,7 +27,7 @@ app.use("/v1/auth/", authApp);
 // Routes Admin
 app.use("/v1/admin/", AuthenticateToken, adminApp);
 // Routes User
-app.use('/', userApp);
+app.use('/user', userApp);
 
 // Default error handler
 app.use((err, req, res, next) => {
