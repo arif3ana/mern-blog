@@ -3,7 +3,9 @@ const express = require("express");
 const authApp = require("./src/routes/auth");
 const adminApp = require("./src/routes/admin");
 const userApp = require("./src/routes/user");
+const Path = require("path");
 const cookieParser = require("cookie-parser");
+const cors = require("cors");
 const AuthenticateToken = require("./src/middleware/authenticateToken");
 
 const app = express();
@@ -12,15 +14,9 @@ const port = 3000;
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
+app.use("/uploads", express.static(Path.join(__dirname, "uploads")));
 app.use(cookieParser());
-
-// handle error CORS 
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", '*');
-  res.setHeader("Access-Control-Allow-Origin", 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.setHeader("Access-Control-Allow-Origin", 'Content-Type, Authorization');
-  next();
-})
+app.use(cors());
 
 // Routes auth
 app.use("/v1/auth/", authApp);

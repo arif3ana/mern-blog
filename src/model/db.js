@@ -6,7 +6,8 @@ mongoose.connect(process.env.DB_URI, {autoIndex: true})
 const User = mongoose.model("User", {
     username: {
         type: String,
-        required: true
+        required: true,
+        unique: 1
     },
     email: {
         type: String,
@@ -45,7 +46,14 @@ const Food = mongoose.model("Food", {
                 required: true
             } 
         }
-    ]
+    ],
+    author: {
+        type: String,
+        required: true
+    },
+    createdAt: {
+        type: String,
+    }
 
 })
 

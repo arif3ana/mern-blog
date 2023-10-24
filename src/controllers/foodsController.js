@@ -1,7 +1,8 @@
-const { Food } = require("../model/db")
+const { Food, User } = require("../model/db")
 const fs = require('fs');
 const Path = require("path");
 const { validationResult } = require("express-validator");
+const jwt = require("jsonwebtoken");
 
 // GET - Read
 const getFood = (req, res, next) => {
@@ -45,7 +46,7 @@ const detailFood = (req, res, next) => {
 }
 
 //Create - Post
-const addFood = (req, res, next) => {
+const addFood = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         const err = new Error("Invalid Value");
@@ -65,6 +66,19 @@ const addFood = (req, res, next) => {
     const imagePath = image.map(gambar => gambar.path);
     let imgPath = !img ? null : img.map(gambar => gambar.path);
 
+    let userData;
+    try {
+        const id = req.cookies['refreshToken'];
+        const userId = jwt.verify(id, process.env.REFRESH_TOKEN_SECRET_KEY)
+        userData = await User.findById(userId.user)
+    } catch (error) {
+        const err = new Error("Data tidak di temukan");
+        err.status = 404;
+        err.data = error
+        return next(err)
+    }
+    const username = userData.username // nama user untuk field author
+
     const dataFood = {
         name: req.body.name,
         description: req.body.description,
@@ -75,7 +89,9 @@ const addFood = (req, res, next) => {
                 img: imgPath == null ? null : imgPath[index], 
                 step: instruction.step
             };
-        })
+        }),
+        author: username,
+        createdAt: new Date().toDateString()
     }
 
     const newData = new Food(dataFood);
@@ -171,6 +187,8 @@ const updateFood = async (req, res, next) => {
                     step: instruction.step
                 };
             })
+    dataUpdate.author = dataUpdate.author,
+    dataUpdate.createdAt = dataUpdate.createdAt
 
     dataUpdate.save()
     .then((result) => res.status(201).json({
