@@ -21,9 +21,9 @@ app.use(cors());
 // Routes auth
 app.use("/v1/auth/", authApp);
 // Routes Admin
-app.use("/v1/admin/", AuthenticateToken, adminApp);
+app.use("/v1/user/", AuthenticateToken, adminApp);
 // Routes User
-app.use('/user', userApp);
+app.use('/foods', userApp);
 
 // Default error handler
 app.use((err, req, res, next) => {
