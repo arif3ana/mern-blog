@@ -11,13 +11,20 @@ const AuthenticateToken = require("./src/middleware/authenticateToken");
 const app = express();
 const port = 3000;
 
+const corsOptions = {
+  origin: 'http://localhost:8080',
+  credentials: true,
+  exposedHeaders: ['Authorization', 'Cookie'],
+};
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use("/uploads", express.static(Path.join(__dirname, "uploads")));
-app.use(cookieParser());
-app.use(cors());
+app.use(cors(corsOptions));
 
+
+app.use(cookieParser());
 // Routes auth
 app.use("/v1/auth/", authApp);
 // Routes Admin

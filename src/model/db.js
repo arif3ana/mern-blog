@@ -52,7 +52,7 @@ const Food = mongoose.model("Food", {
         required: true
     },
     createdAt: {
-        type: String,
+        type: Date,
     }
 
 })

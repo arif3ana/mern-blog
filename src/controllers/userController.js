@@ -15,6 +15,7 @@ const getRecipe = (req, res, next) => {
         } 
         totalFood = result;
         return Food.find()
+        .sort({createdAt: -1})
         .skip((currentPage - 1) * perPage)
         .limit(perPage)
         
@@ -37,6 +38,7 @@ const getRecipe = (req, res, next) => {
     })
 }
 
+// belum di pakai
 const detailRecipe = async (req, res, next) => {
     const foodId = req.params.id
     const detailData = await Food.findById(foodId);

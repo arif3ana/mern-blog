@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 // GET - Read
 const getFood = (req, res, next) => {
     Food.find()
+    .sort({createdAt: -1})
     .then((result) => {
         if (result.length === 0) {
             const err = new Error("Data Makanan Belum ada");
@@ -44,6 +45,26 @@ const detailFood = (req, res, next) => {
         return next(err)
     })
 }
+
+const getFoodByName = (req, res, next) => {
+    const userId = req.query.user;
+    Food.find({author: userId})
+    .sort({createdAt: -1})
+    .then((result) => {
+        res.status(200).json({
+            message: `Data ${userId} berhasil di temukan`,
+            data: result
+        })
+    })
+    .catch((error) => {
+        const err = new Error(`Data ${userId} tidak di temukan`);
+        err.status = 404;
+        err.data = error;
+        return next(err)
+    })
+}
+
+
 
 //Create - Post
 const addFood = async (req, res, next) => {
@@ -91,7 +112,7 @@ const addFood = async (req, res, next) => {
             };
         }),
         author: username,
-        createdAt: new Date().toDateString()
+        createdAt: new Date()
     }
 
     const newData = new Food(dataFood);
@@ -131,8 +152,7 @@ const updateFood = async (req, res, next) => {
 
     // menghandle request image jika ada maupun tidak ada request image
     let {image, img} = req.files;
-
-    //validasi jika ada request image dan jika tidak ada request
+    // validasi jika ada request image dan jika tidak ada request
     let imagePath; 
     if (!image) {
         imagePath = [dataUpdate.image];
@@ -150,20 +170,26 @@ const updateFood = async (req, res, next) => {
         })
     }
 
-    //validasi jika ada request img dan jika tidak ada request
-    let imgPath; 
-    if (!img) {
-        imgPath = dataUpdate.instructions.map(instruction => instruction.img);
-    } else {
-        // mengisi imagePath dengan img yang baru
-        imgPath = img.map(instruction => instruction.path)
-        //menghapus img lama
-        let imgFullPath = dataUpdate.instructions.map((instruction) => {
-            return Path.join(__dirname, '../../' + instruction.img);
-        });
-        imgFullPath.map((hapusPath)=> {
-            if (hapusPath !== Path.join(__dirname, '../../null')) {
-                fs.unlink(hapusPath,(err) => {
+    //mengambil img jika ada
+    const newImg = img ? img.map(newInstruc => newInstruc.path) : null;
+    // mengambil path img yang sudah ada di request body
+    const oldImg = req.body.instructions.map(oldInstruc => oldInstruc.img);
+    // mengambil path img dari db
+    const dbImg = dataUpdate.instructions.map(instruction => instruction.img);
+    
+    // fungsi untuk mengecek array
+    function arraysAreEqual(arr1, arr2) {
+        //cek panjang array
+        if (arr1.length !== arr2.length) {
+          return false;
+        }
+        // cek isi array 
+        for (let i = 0; i < arr1.length; i++) {
+          if (arr1[i] !== arr2[i]) {
+            //menghapus dbimg jika ada nilai dbimg yang tidak sama dengan oldimg
+            const deletePath = Path.join(__dirname, '../../' + arr1[i]);
+            if (deletePath !== Path.join(__dirname, '../../null')) {
+                fs.unlink(deletePath,(err) => {
                     if (err) {
                         console.error(err);
                         const error = new Error("Update gagal");
@@ -172,8 +198,36 @@ const updateFood = async (req, res, next) => {
                     }
                 })
             }
-        })
+            return false;
+          }
+        }
+        return true;
+      }
 
+      function arrayReplace(a, b) {
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] === undefined && b.length > 0) {
+                a[i] = b.shift();
+            }
+        }
+        while (b.length > 0) {
+            a.push(b.shift());
+        }
+      }
+
+    let reqImg;
+    if (arraysAreEqual(dbImg, oldImg)) {
+        if(!newImg) {
+            reqImg = dbImg; //ketika tidak ada yang di ubah
+        } else {
+            //ketika ada yang di tambahkan 
+            arrayReplace(oldImg, newImg);
+            reqImg = oldImg;
+        }
+    } else {
+        //ketika tidak identik yang artinya ada data lama yang di ubah dan mungkin di tambahkan
+        arrayReplace(oldImg, newImg);
+        reqImg = oldImg;
     }
 
     dataUpdate.name = req.body.name;
@@ -183,7 +237,7 @@ const updateFood = async (req, res, next) => {
     dataUpdate.instructions = req.body.instructions.map(
         (instruction, index) => {
                 return {
-                    img: imgPath[index], 
+                    img: reqImg[index], 
                     step: instruction.step
                 };
             })
@@ -212,17 +266,22 @@ const deleteFood = async (req, res, next) => {
         err.data = error
         return next(err)
     }
-        
+    
     //hapus image dan img
     const imageFullPath = Path.join(__dirname, '../../' + dataDeleted.image);
-    fs.unlink(imageFullPath, (err) => {
-        if(err) {
-            console.error(err);
-            const error = new Error("Update gagal");
-            error.status = 400;
-            return next(error)
-        }
-    })
+    if (imageFullPath !== Path.join(__dirname, '../../null')) {
+        fs.unlink(imageFullPath, (err) => {
+            if(err) {
+                const error = new Error("Deleted gagal");
+                error.status = 400;
+                return next(error)
+            }
+        })
+    } else {
+        const error = new Error("Deleted gagal");
+        error.status = 400;
+        return next(error)
+    }
 
     let imgFullPath = dataDeleted.instructions.map((instruction) => {
         return Path.join(__dirname, '../../' + instruction.img);
@@ -231,8 +290,7 @@ const deleteFood = async (req, res, next) => {
         if (hapusPath !== Path.join(__dirname, '../../null')) {
             fs.unlink(hapusPath,(err) => {
                 if (err) {
-                    console.error(err);
-                    const error = new Error("Update gagal");
+                    const error = new Error("Deleted gagal");
                     error.status = 400;
                     return next(error)
                 }
@@ -260,4 +318,4 @@ const deleteFood = async (req, res, next) => {
 // __dirname: /home/al-arif/Proyek/mern-blog/src/controllers
 // imagePath : uploads/mainImg/1697870826229-107731082-arif-profile.jpg
 
-module.exports = {getFood, detailFood, addFood, updateFood, deleteFood}
+module.exports = {getFood, detailFood, addFood, updateFood, deleteFood, getFoodByName}

@@ -2,7 +2,6 @@ const {validationResult} = require("express-validator");
 const {User} = require("../model/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
 const saltRound = 10; // digunakan untuk enkripsi password
 
 // POST - Register
@@ -36,7 +35,7 @@ const userRegister = async (req, res, next) => {
     }))
     .catch((error) => res.status(400).json({
         message: "Input tidak valid",
-        error: error.keyPattern.email ? "Email sudah digunakan" : error
+        error: error.keyPattern
     }));  
 }
 
@@ -53,33 +52,33 @@ const userLogin = async (req, res, next) => {
     const validPassword = await bcrypt.compare(req.body.password, user.password);
     
     if (!validPassword) {
-        const err = new Error("Password anda tidak valid");
+        const err = new Error("Password anda salah!");
         err.status = 401;
         return next(err);
     }
 
     // Generate accessToken dan refreshToken jwt
-    const accessToken = jwt.sign({user: user._id}, process.env.ACCESS_TOKEN_SECRET_KEY, { expiresIn: 3600 });
-    const refreshToken = jwt.sign({user: user._id}, process.env.REFRESH_TOKEN_SECRET_KEY)
+    const accessToken = jwt.sign({user: user._id}, process.env.ACCESS_TOKEN_SECRET_KEY, { expiresIn: 300 });
+    const refreshToken = jwt.sign({user: user._id}, process.env.REFRESH_TOKEN_SECRET_KEY, {expiresIn: 24 * 60 * 60 * 1000})
     
     // kirim respons sebagai header Authorization Bearer <token> dan simpan refreshToken di cookie untuk kebutuhan logout dan refresh accessToken
     res.status(200)
-    .cookie("refreshToken", refreshToken, { httpOnly: true })
+    .cookie("refreshToken", refreshToken, { path: '/', maxAge: 24 * 60 * 60 * 1000})
     .header("Authorization", "Bearer " + accessToken)
     .json({
-    accessToken: accessToken,
+    accessToken: "Bearer " + accessToken,
     refreshToken: refreshToken,
     message: "login Success!!",
     data: {
-        userId: user._id,
+        userId: user.username,
         email: user.email,
     }})
 }
 
 // POST - refresh token jwt
 const refreshToken = (req, res, next) => {
-    const tokenRefresh = req.cookies['refreshToken'];
-    if (!refreshToken) {
+    const tokenRefresh = req.cookies.refreshToken;
+    if (!tokenRefresh) {
         const err = new Error("Silahkan Login kembali");
         err.status = 401;
         return next(err)
@@ -87,9 +86,8 @@ const refreshToken = (req, res, next) => {
     
     try {
         const decoded = jwt.verify(tokenRefresh, process.env.REFRESH_TOKEN_SECRET_KEY);
-        const accessToken = jwt.sign({user: decoded.user}, process.env.ACCESS_TOKEN_SECRET_KEY, { expiresIn: 3600 });
-    
-        res.header("Authorization", "Bearer " + accessToken).status(200)
+        const accessToken = jwt.sign({user: decoded.user}, process.env.ACCESS_TOKEN_SECRET_KEY, { expiresIn: 300 });
+        res.status(200).header("Authorization", "Bearer " + accessToken)
         .json({
             user: decoded.user
         });
