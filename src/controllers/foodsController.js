@@ -47,36 +47,53 @@ const detailFood = (req, res, next) => {
 }
 
 const getFoodByName = (req, res, next) => {
-    const userId = req.query.user;
+    const userId = req.params.user;
     Food.find({author: userId})
     .sort({createdAt: -1})
     .then((result) => {
+        if (result.length === 0) {
+            const err = new Error(`Data ${userId} tidak di temukan`);
+            err.status = 404;
+            return next(err)
+        }
         res.status(200).json({
             message: `Data ${userId} berhasil di temukan`,
             data: result
         })
     })
     .catch((error) => {
-        const err = new Error(`Data ${userId} tidak di temukan`);
+        const err = new Error(`Error ketika memuat data`);
         err.status = 404;
         err.data = error;
         return next(err)
     })
 }
 
-
-
 //Create - Post
 const addFood = async (req, res, next) => {
     const errors = validationResult(req);
+    const {image, img} = req.files;
     if (!errors.isEmpty()) {
+
+        //menghapus image dan img ketika validation error
+        if (image) {
+            const imageError = image[0].path;
+            fs.unlinkSync(imageError);
+        }
+
+        if (img) {
+            img.map(gambar => {
+                fs.unlinkSync(gambar.path);
+            })
+        }
+
         const err = new Error("Invalid Value");
         err.status = 400;
         err.data = errors.array()
         return next(err)
     }
 
-    const {image, img} = req.files;
+
     // validasi apakah image ada
     if (!image) {
         const err = new Error("Image harus di isi");
@@ -86,6 +103,21 @@ const addFood = async (req, res, next) => {
 
     const imagePath = image.map(gambar => gambar.path);
     let imgPath = !img ? null : img.map(gambar => gambar.path);
+    const reqImg = req.body.instructions.map(instruc => instruc.img);
+
+    function arrayReplace(a, b) {
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] === undefined && b.length > 0) {
+                a[i] = b.shift();
+            }
+        }
+        while (b.length > 0) {
+            a.push(b.shift());
+        }
+    }
+
+    arrayReplace(reqImg, imgPath);
+    const listImg = reqImg; // list img dari gambar dan keterangan null di instruction img
 
     let userData;
     try {
@@ -107,7 +139,7 @@ const addFood = async (req, res, next) => {
         ingredients: req.body.ingredients,
         instructions: req.body.instructions.map((instruction, index) => {
             return {
-                img: imgPath == null ? null : imgPath[index], 
+                img: listImg[index] === 'null' ? null : listImg[index], 
                 step: instruction.step
             };
         }),
@@ -131,7 +163,21 @@ const addFood = async (req, res, next) => {
 const updateFood = async (req, res, next) => {
     // Input validasi
     const errors = validationResult(req);
+    const {image, img} = req.files;
     if (!errors.isEmpty()) {
+
+        //menghapus image dan img ketika validation error
+        if (image) {
+            const imageError = image[0].path;
+            fs.unlinkSync(imageError);
+        }
+
+        if (img) {
+            img.map(gambar => {
+                fs.unlinkSync(gambar.path);
+            })
+        }
+
         const err = new Error("Invalid Value");
         err.status = 400;
         err.data = errors.array()
@@ -150,8 +196,7 @@ const updateFood = async (req, res, next) => {
         return next(err)
     }
 
-    // menghandle request image jika ada maupun tidak ada request image
-    let {image, img} = req.files;
+
     // validasi jika ada request image dan jika tidak ada request
     let imagePath; 
     if (!image) {
@@ -170,7 +215,7 @@ const updateFood = async (req, res, next) => {
         })
     }
 
-    //mengambil img jika ada
+    //mengambil img 
     const newImg = img ? img.map(newInstruc => newInstruc.path) : null;
     // mengambil path img yang sudah ada di request body
     const oldImg = req.body.instructions.map(oldInstruc => oldInstruc.img);
@@ -314,8 +359,5 @@ const deleteFood = async (req, res, next) => {
     })
 
 }
-
-// __dirname: /home/al-arif/Proyek/mern-blog/src/controllers
-// imagePath : uploads/mainImg/1697870826229-107731082-arif-profile.jpg
 
 module.exports = {getFood, detailFood, addFood, updateFood, deleteFood, getFoodByName}

@@ -6,7 +6,7 @@ const upload = require("../middleware/imageHandler");
 
 app.get('/food', foodController.getFood);
 app.get("/food/:id", foodController.detailFood);
-app.get('/food/?user=', foodController.getFoodByName);
+app.get('/food/author/:user', foodController.getFoodByName);
 app.post("/food/add-food",
 upload.fields([
     {name: "image", maxCount: 1}, 
