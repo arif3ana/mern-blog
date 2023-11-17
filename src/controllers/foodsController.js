@@ -111,9 +111,13 @@ const addFood = async (req, res, next) => {
                 a[i] = b.shift();
             }
         }
-        while (b.length > 0) {
-            a.push(b.shift());
+
+        if (b) {
+            while (b.length > 0) {
+                a.push(b.shift());
+            }   
         }
+
     }
 
     arrayReplace(reqImg, imgPath);
