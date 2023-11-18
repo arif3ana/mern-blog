@@ -52,12 +52,12 @@ const getFoodByName = (req, res, next) => {
     .sort({createdAt: -1})
     .then((result) => {
         if (result.length === 0) {
-            const err = new Error(`Data ${userId} tidak di temukan`);
+            const err = new Error(`${userId} belum menambahkan resep`);
             err.status = 404;
             return next(err)
         }
         res.status(200).json({
-            message: `Data ${userId} berhasil di temukan`,
+            message: `Resep ${userId} berhasil di temukan`,
             data: result
         })
     })

@@ -9,10 +9,10 @@ const cors = require("cors");
 const AuthenticateToken = require("./src/middleware/authenticateToken");
 
 const app = express();
-const port = 3000;
+const port = process.env.APP_PORT;
 
 const corsOptions = {
-  origin: 'http://localhost:8080',
+  origin: process.env.ORIGIN_FRONTEND_URL,
   credentials: true,
   exposedHeaders: ['Authorization', 'Cookie'],
 };

@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 
 mongoose.connect(process.env.DB_URI, {autoIndex: true})
-.then(() => console.log("Conected success!!"));
+.then(() => console.log("Conected success!!"))
+.catch((error) => console.log(error))
 
 const User = mongoose.model("User", {
     username: {
