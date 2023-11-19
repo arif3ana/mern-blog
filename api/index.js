@@ -1,12 +1,12 @@
 require("dotenv").config();
 const express = require("express");
-const authApp = require("./src/routes/auth");
-const adminApp = require("./src/routes/admin");
-const userApp = require("./src/routes/user");
+const authApp = require("../src/routes/auth");
+const adminApp = require("../src/routes/admin");
+const userApp = require("../src/routes/user");
 const Path = require("path");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const AuthenticateToken = require("./src/middleware/authenticateToken");
+const AuthenticateToken = require("../src/middleware/authenticateToken");
 
 const app = express();
 const port = process.env.APP_PORT;
