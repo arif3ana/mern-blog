@@ -63,8 +63,8 @@ const userLogin = async (req, res, next) => {
     
     // kirim respons sebagai header Authorization Bearer <token> dan simpan refreshToken di cookie untuk kebutuhan logout dan refresh accessToken
     res.status(200)
-    .cookie("refreshToken", refreshToken, { path: '/', maxAge: 24 * 60 * 60 * 1000})
-    .header("Authorization", "Bearer " + accessToken)
+    .cookie("refreshToken", refreshToken, { path: '/', maxAge: 24 * 60 * 60 * 1000, sameSite: 'none', secure: true, httpOnly: true,})
+    .cookie("accessToken", "Bearer " + accessToken, { path: '/', maxAge: 300, sameSite: 'none', secure: true, httpOnly: true,})
     .json({
     accessToken: "Bearer " + accessToken,
     refreshToken: refreshToken,
