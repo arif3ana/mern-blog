@@ -9,9 +9,10 @@ function handleError(msg, status, errors, next) {
 }
 
 function AuthenticateToken(req, res, next) {
-    const authHeader = req.cookies['accessToken']
+    const authHeader = req.headers.authorization;
     const accessToken = authHeader && authHeader.split(' ')[1];
-    const refreshToken = req.cookies.refreshToken;
+    const refreshToken = req.cookies.id_refresh;
+    console.log(accessToken);
     if (!accessToken && !refreshToken) {
         const err = new Error('Maaf anda belum login');
         err.status = 401;

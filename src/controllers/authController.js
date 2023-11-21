@@ -63,7 +63,7 @@ const userLogin = async (req, res, next) => {
     
     // kirim respons sebagai header Authorization Bearer <token> dan simpan refreshToken di cookie untuk kebutuhan logout dan refresh accessToken
     res.status(200)
-    .cookie("refreshToken", refreshToken, { path: '/', maxAge: 24 * 60 * 60 * 1000})
+    .cookie("id_refresh", refreshToken, { path: '/', maxAge: 24 * 60 * 60 * 1000, sameSite: 'none', secure: true})
     .header("Authorization", "Bearer " + accessToken)
     .json({
     accessToken: "Bearer " + accessToken,
@@ -77,7 +77,7 @@ const userLogin = async (req, res, next) => {
 
 // POST - refresh token jwt
 const refreshToken = (req, res, next) => {
-    const tokenRefresh = req.cookies.refreshToken;
+    const tokenRefresh = req.cookies.id_refresh;
     if (!tokenRefresh) {
         const err = new Error("Silahkan Login kembali");
         err.status = 401;
@@ -103,7 +103,7 @@ const refreshToken = (req, res, next) => {
 // DELETE - Logout
 const userLogout = (req, res) => {
     // Menghapus cookie refreshToken
-    res.clearCookie('refreshToken').status(200)
+    res.clearCookie('id_refresh').status(200)
     .json({
         message: "Logout success!!"
     })

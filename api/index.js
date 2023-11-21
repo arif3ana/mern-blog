@@ -14,7 +14,7 @@ const port = process.env.APP_PORT;
 const corsOptions = {
   origin: process.env.ORIGIN_FRONTEND_URL,
   credentials: true,
-  exposedHeaders: ['Authorization', 'Cookie'],
+  exposedHeaders: ['Authorization', 'Cookie', 'Content-Type'],
 };
 
 // Middleware
