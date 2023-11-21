@@ -3,7 +3,14 @@ const multer = require("multer");
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         const dir = file.fieldname === "image" ? "mainImg" : "img";
-        cb(null, `uploads/${dir}`); 
+        const uploadPath = `uploads/${dir}`
+
+        // Membuat folder jika belum ada
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+
+        cb(null, uploadPath); 
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
@@ -12,16 +19,10 @@ const storage = multer.diskStorage({
 })
 
 const fileFilter = (req, file, cb) => {
-    if (
-        file.mimetype === "image/png" || 
-        file.mimetype === "image/jpg" || 
-        file.mimetype === "image/jpeg" || 
-        file.mimetype === "image/webp" ||
-        file.mimetype === "img/png" || 
-        file.mimetype === "img/jpg" || 
-        file.mimetype === "img/jpeg" || 
-        file.mimetype === "img/webp"
-        ) 
+    const imageMimeTypes = ["image/png", "image/jpg", "image/jpeg", "image/webp"];
+    const imgMimeTypes = ["img/png", "img/jpg", "img/jpeg", "img/webp"];
+    
+    if (imageMimeTypes.includes(file.mimetype) || imgMimeTypes.includes(file.mimetype)) 
     {
         cb(null, true)
     } else {

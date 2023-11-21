@@ -125,7 +125,7 @@ const addFood = async (req, res, next) => {
 
     let userData;
     try {
-        const id = req.cookies['refreshToken'];
+        const id = req.cookies.id_refresh;
         const userId = jwt.verify(id, process.env.REFRESH_TOKEN_SECRET_KEY)
         userData = await User.findById(userId.user)
     } catch (error) {

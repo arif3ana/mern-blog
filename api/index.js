@@ -1,12 +1,12 @@
 require("dotenv").config();
 const express = require("express");
-const authApp = require("./src/routes/auth");
-const adminApp = require("./src/routes/admin");
-const userApp = require("./src/routes/user");
+const authApp = require("../src/routes/auth");
+const adminApp = require("../src/routes/admin");
+const userApp = require("../src/routes/user");
 const Path = require("path");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const AuthenticateToken = require("./src/middleware/authenticateToken");
+const AuthenticateToken = require("../src/middleware/authenticateToken");
 
 const app = express();
 const port = process.env.APP_PORT;
@@ -14,7 +14,7 @@ const port = process.env.APP_PORT;
 const corsOptions = {
   origin: process.env.ORIGIN_FRONTEND_URL,
   credentials: true,
-  exposedHeaders: ['Authorization', 'Cookie', 'Set-Cookie'],
+  exposedHeaders: ['Authorization', 'Cookie', 'Content-Type', 'Set-Cookie'],
 };
 
 // Middleware
@@ -43,4 +43,4 @@ app.use((err, req, res, next) => {
       }
 })
 
-app.listen(port, () => console.log(`listen in http://localhost:${port}`));
+app.listen(port, () => console.log(`listen in ${port}`));
