@@ -12,7 +12,6 @@ function AuthenticateToken(req, res, next) {
     const authHeader = req.headers.authorization;
     const accessToken = authHeader && authHeader.split(' ')[1];
     const refreshToken = req.cookies.id_refresh;
-    console.log(accessToken); 
     
     if (!accessToken && !refreshToken) {
         const err = new Error('Maaf anda belum login');

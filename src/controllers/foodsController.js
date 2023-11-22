@@ -1,7 +1,8 @@
 const { Food, User } = require("../model/db")
+const { validationResult } = require("express-validator");
+const { uploader } = require('cloudinary').v2;
 const fs = require('fs');
 const Path = require("path");
-const { validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
 
 // GET - Read
@@ -10,10 +11,11 @@ const getFood = (req, res, next) => {
     .sort({createdAt: -1})
     .then((result) => {
         if (result.length === 0) {
-            const err = new Error("Data Makanan Belum ada");
-            err.status = 404;
-            err.data = result;
-            return next(err)
+            res.status(200).json({
+                data: {
+                    msg: "Data Makanan Belum ada"
+                },
+            })
         }
         res.status(200).json({
             message: "Data Makanan berhasil di tampilkan",
@@ -69,21 +71,36 @@ const getFoodByName = (req, res, next) => {
     })
 }
 
+// fungsi untuk menghapus gambar
+const deleteCloudinaryImage = async (url) => {
+    // extract public_id cloudinary 
+    const parts = url.split('/'); // pisahkan string berdasarkan / 
+    const lastPart = parts[parts.length - 1]; // ambil urutan terakhir dari array parts
+    const folderName = parts[parts.length - 2]; // ambil nama folder dari url 
+    const imageId = lastPart.split('.')[0]; // memisahkan id dengan exstensi file
+
+    try {
+        const public_id = `${folderName}/${imageId}`
+        await uploader.destroy(public_id);
+    } catch (error) {
+        console.error(`Gagal menghapus gambar dari Cloudinary: ${error.message}`);
+    }
+}
+
 //Create - Post
 const addFood = async (req, res, next) => {
     const errors = validationResult(req);
     const {image, img} = req.files;
     if (!errors.isEmpty()) {
-
         //menghapus image dan img ketika validation error
         if (image) {
             const imageError = image[0].path;
-            fs.unlinkSync(imageError);
+            await deleteCloudinaryImage(imageError);
         }
 
         if (img) {
-            img.map(gambar => {
-                fs.unlinkSync(gambar.path);
+            img.map(async gambar => {
+                await deleteCloudinaryImage(gambar.path);
             })
         }
 
@@ -173,12 +190,12 @@ const updateFood = async (req, res, next) => {
         //menghapus image dan img ketika validation error
         if (image) {
             const imageError = image[0].path;
-            fs.unlinkSync(imageError);
+            await deleteCloudinaryImage(imageError);
         }
 
         if (img) {
-            img.map(gambar => {
-                fs.unlinkSync(gambar.path);
+            img.map( async gambar => {
+                await deleteCloudinaryImage(gambar.path);
             })
         }
 
@@ -200,7 +217,6 @@ const updateFood = async (req, res, next) => {
         return next(err)
     }
 
-
     // validasi jika ada request image dan jika tidak ada request
     let imagePath; 
     if (!image) {
@@ -208,15 +224,7 @@ const updateFood = async (req, res, next) => {
     } else {
         imagePath = image.map(gambar => gambar.path);
         //menghapus image lama
-        const imageFullPath = Path.join(__dirname, '../../' + dataUpdate.image);
-        fs.unlink(imageFullPath, (err) => {
-            if(err) {
-                console.error(err);
-                const error = new Error("Update gagal");
-                error.status = 400;
-                return next(error)
-            }
-        })
+        await deleteCloudinaryImage(dataUpdate.image);
     }
 
     //mengambil img 
@@ -226,8 +234,8 @@ const updateFood = async (req, res, next) => {
     // mengambil path img dari db
     const dbImg = dataUpdate.instructions.map(instruction => instruction.img);
     
-    // fungsi untuk mengecek array
-    function arraysAreEqual(arr1, arr2) {
+    // fungsi untuk mengecek keidentikan array dbimg dan oldimg
+    async function arraysAreEqual(arr1, arr2) {
         //cek panjang array
         if (arr1.length !== arr2.length) {
           return false;
@@ -236,16 +244,9 @@ const updateFood = async (req, res, next) => {
         for (let i = 0; i < arr1.length; i++) {
           if (arr1[i] !== arr2[i]) {
             //menghapus dbimg jika ada nilai dbimg yang tidak sama dengan oldimg
-            const deletePath = Path.join(__dirname, '../../' + arr1[i]);
-            if (deletePath !== Path.join(__dirname, '../../null')) {
-                fs.unlink(deletePath,(err) => {
-                    if (err) {
-                        console.error(err);
-                        const error = new Error("Update gagal");
-                        error.status = 400;
-                        return next(error)
-                    }
-                })
+            let deletePath = arr1[i]
+            if (deletePath !== null) {
+                await deleteCloudinaryImage(deletePath);
             }
             return false;
           }
@@ -253,6 +254,7 @@ const updateFood = async (req, res, next) => {
         return true;
       }
 
+      // menggabungkan oldImg dengan newImg
       function arrayReplace(a, b) {
         for (let i = 0; i < a.length; i++) {
             if (a[i] === undefined && b.length > 0) {
@@ -316,36 +318,22 @@ const deleteFood = async (req, res, next) => {
         return next(err)
     }
     
-    //hapus image dan img
-    const imageFullPath = Path.join(__dirname, '../../' + dataDeleted.image);
-    if (imageFullPath !== Path.join(__dirname, '../../null')) {
-        fs.unlink(imageFullPath, (err) => {
-            if(err) {
-                const error = new Error("Deleted gagal");
-                error.status = 400;
-                return next(error)
-            }
-        })
+    // hapus image
+    const imageFullPath = dataDeleted.image;
+    if (imageFullPath !== null) {
+        await deleteCloudinaryImage(imageFullPath);
     } else {
+        // handle ketika image sama dengan null
         const error = new Error("Deleted gagal");
         error.status = 400;
         return next(error)
     }
-
-    let imgFullPath = dataDeleted.instructions.map((instruction) => {
-        return Path.join(__dirname, '../../' + instruction.img);
-    });
-    imgFullPath.map((hapusPath)=> {
-        if (hapusPath !== Path.join(__dirname, '../../null')) {
-            fs.unlink(hapusPath,(err) => {
-                if (err) {
-                    const error = new Error("Deleted gagal");
-                    error.status = 400;
-                    return next(error)
-                }
-            })
+    // hapus img
+    dataDeleted.instructions.map(async (instruction) => {
+        if (instruction.img !== null) {
+            await deleteCloudinaryImage(instruction.img);
         }
-    })
+    });
 
     // deleted data 
     Food.deleteOne({_id: dataDeleted._id})
